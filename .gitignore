@@ -1,0 +1,5 @@
+*.exe
+*.out
+output/*.png
+output/*.dot
+.vscode/
