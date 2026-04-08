@@ -1,6 +1,7 @@
 #include <iostream>
 #include "planner/Node.h"
 #include "planner/QueryPlan.h"
+#include "optimizer/Optimiser.h"
 
 using namespace std;
 
@@ -32,6 +33,11 @@ int main() {
 
     cout << "Generated Query Plan:\n";
     printTree(plan);
+
+	Node* optimized = Optimizer::pushSelection(plan);
+
+	cout << "\nAfter Optimization:\n";
+	printTree(optimized);
 
     return 0;
 }
