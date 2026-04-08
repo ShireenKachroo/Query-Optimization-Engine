@@ -1,11 +1,9 @@
 #include <iostream>
 #include "planner/Node.h"
-#include<bits/stdc++.h>
-
+#include "planner/QueryPlan.h"
 
 using namespace std;
 
-// printing tree
 void printTree(Node* root, int level = 0) {
     if (!root) return;
 
@@ -24,26 +22,16 @@ void printTree(Node* root, int level = 0) {
 
 int main() {
 
-    // Create TABLE nodes
-    Node* A = new Node("TABLE", "A");
-    Node* B = new Node("TABLE", "B");
+    // Dummy Query (acts like parser output)
+    Query q;
+    q.selectCols = {"name"};
+    q.tables = {"A", "B"};
+    q.conditions = {"A.id = B.id", "A.age > 20"};
 
-    // Create JOIN
-    Node* join = new Node("JOIN","");
-    join->addChild(A);
-    join->addChild(B);
+    Node* plan = QueryPlan::buildPlan(q);
 
-    // Create SELECT (filter)
-    Node* select = new Node("SELECT", "A.age > 20");
-    select->addChild(join);
-
-    // Create PROJECT
-    Node* project = new Node("PROJECT", "name");
-    project->addChild(select);
-
-    // Print tree
-    cout << "Query Plan Tree:\n";
-    printTree(project);
+    cout << "Generated Query Plan:\n";
+    printTree(plan);
 
     return 0;
 }
