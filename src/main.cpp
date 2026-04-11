@@ -1,11 +1,31 @@
 #include <iostream>
+#include <iomanip>
 #include "planner/Node.h"
 #include "optimizer/Optimiser.h"
 #include "cost/CostEstimator.h"
 
+// Helper function to print the tree structure to the console
+void printTree(Node* root, int level = 0) {
+    if (!root) return;
+    for (int i = 0; i < level; i++) std::cout << "  ";
+    std::cout << "|-- " << root->type;
+    if (!root->value.empty()) std::cout << " (" << root->value << ")";
+    std::cout << std::endl;
+    for (Node* child : root->children) {
+        printTree(child, level + 1);
+    }
+}
+
 int main() {
-    // 1. Manually building: PROJECT -> SELECT (A.age > 20) -> JOIN -> (A, B)
-    Node* tableA = new Node("TABLE", "A");
+    std::cout << "==========================================" << std::endl;
+    std::cout << "      SQL QUERY OPTIMIZATION ENGINE       " << std::endl;
+    std::cout << "==========================================" << std::endl;
+
+    // --- STEP 1: BUILD UNOPTIMIZED PLAN ---
+    // Structure: LIMIT -> PROJECT -> SELECT -> JOIN -> (TABLE A, TABLE B)
+    // Note: We put Table A (1000) on left and Table B (500) on right to test Reordering
+    
+    Node* tableA = new Node("TABLE", "A"); 
     Node* tableB = new Node("TABLE", "B");
 
     Node* join = new Node("JOIN");
@@ -15,28 +35,37 @@ int main() {
     Node* select = new Node("SELECT", "A.age > 20");
     select->addChild(join);
 
-    Node* root = new Node("PROJECT", "name");
-    root->addChild(select);
+    Node* project = new Node("PROJECT", "name, age");
+    project->addChild(select);
 
-    // 2. Calculate Initial Cost
-    double oldCost = CostEstimator::estimateCost(root);
+    Node* root = new Node("LIMIT", "10");
+    root->addChild(project);
 
-    // 3. Perform Full Optimization (Selection + Projection)
-    // NOTE: Use 'Optimiser' with an 's' to match your file names
-    Node* optimizedRoot = Optimizer::optimise(root);
+    std::cout << "\n[1] Initial Query Plan (Unoptimized):" << std::endl;
+    printTree(root);
 
-    // 4. Calculate Optimized Cost
-    double newCost = CostEstimator::estimateCost(optimizedRoot);
+    // --- STEP 2: CALCULATE INITIAL COST ---
+    double initialCost = CostEstimator::estimateCost(root);
 
-    // 5. Output Report
-    std::cout << "--- Query Optimization Report ---" << std::endl;
-    std::cout << "Initial Cost: " << oldCost << std::endl;
-    std::cout << "Optimized Cost: " << newCost << std::endl;
+    // --- STEP 3: RUN OPTIMIZATION PIPELINE ---
+    // This runs: Limit Pushdown -> Selection Pushdown -> Join Reordering -> Projection Pushdown
+    Node* optimizedRoot = Optimiser::optimise(root);
 
-    if (oldCost > 0) {
-        double improvement = ((oldCost - newCost) / oldCost) * 100;
-        std::cout << "Improvement: " << improvement << "%" << std::endl;
-    }
+    std::cout << "\n[2] Optimized Query Plan:" << std::endl;
+    printTree(optimizedRoot);
+
+    // --- STEP 4: CALCULATE FINAL COST & REPORT ---
+    double finalCost = CostEstimator::estimateCost(optimizedRoot);
+    double improvement = ((initialCost - finalCost) / initialCost) * 100;
+
+    std::cout << "\n==========================================" << std::endl;
+    std::cout << "           OPTIMIZATION REPORT            " << std::endl;
+    std::cout << "==========================================" << std::endl;
+    std::cout << std::fixed << std::setprecision(2);
+    std::cout << "Initial Estimated Cost   : " << initialCost << std::endl;
+    std::cout << "Optimized Estimated Cost : " << finalCost << std::endl;
+    std::cout << "Efficiency Improvement   : " << improvement << "%" << std::endl;
+    std::cout << "==========================================" << std::endl;
 
     return 0;
 }

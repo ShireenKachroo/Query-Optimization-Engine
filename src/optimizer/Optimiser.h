@@ -3,11 +3,13 @@
 
 #include "../planner/Node.h"
 
-class Optimizer {
+class Optimiser {
 public:
     static Node* pushSelection(Node* root);
     static Node* pushProjection(Node* root);
-    static Node* optimise(Node* root); // Use this in main.cpp
+    static Node* pushLimit(Node* root);       // New!
+    static Node* reorderJoins(Node* root);    // New!
+    static Node* optimise(Node* root);
 };
 
 #endif

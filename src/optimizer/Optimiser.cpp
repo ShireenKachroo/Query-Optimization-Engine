@@ -1,7 +1,7 @@
 #include "Optimiser.h"
 
 // -------------------- Selection Pushdown --------------------
-Node* Optimizer::pushSelection(Node* root) {
+Node* Optimiser::pushSelection(Node* root) {
     if (!root || root->children.empty()) return root;
 
     // 1. Bottom-up recursion
@@ -37,7 +37,7 @@ Node* Optimizer::pushSelection(Node* root) {
 }
 
 // -------------------- Projection Pushdown --------------------
-Node* Optimizer::pushProjection(Node* root) {
+Node* Optimiser::pushProjection(Node* root) {
     if (!root || root->children.empty()) return root;
 
     if (root->type == "PROJECT") {
@@ -70,13 +70,66 @@ Node* Optimizer::pushProjection(Node* root) {
     return root;
 }
 
-// -------------------- Main Entry Point --------------------
-Node* Optimizer::optimise(Node* root) {
+
+Node* Optimiser::pushLimit(Node* root) {
+    if (!root || root->children.empty()) return root;
+
+    if (root->type == "LIMIT") {
+        Node* child = root->children[0];
+        if (child->type == "JOIN") {
+            // Push the same limit to both children of the join
+            Node* leftLimit = new Node("LIMIT", root->value);
+            leftLimit->addChild(child->children[0]);
+
+            Node* rightLimit = new Node("LIMIT", root->value);
+            rightLimit->addChild(child->children[1]);
+
+            child->children[0] = leftLimit;
+            child->children[1] = rightLimit;
+        }
+    }
+
+    for (auto &c : root->children) c = pushLimit(c);
+    return root;
+}
+
+#include "../cost/CostEstimator.h" // Needed for getOutputSize
+
+Node* Optimiser::reorderJoins(Node* root) {
+    if (!root || root->children.empty()) return root;
+
+    // Process bottom-up
+    for (auto &c : root->children) c = reorderJoins(c);
+
+    if (root->type == "JOIN" && root->children.size() == 2) {
+        Node* left = root->children[0];
+        Node* right = root->children[1];
+
+        // We want the "smaller" table on the left (Heuristic for many join algorithms)
+        // Note: This requires getOutputSize to be accessible or moved to a utility
+        if (CostEstimator::estimateCost(left) > CostEstimator::estimateCost(right)) {
+            // Swap children
+            root->children[0] = right;
+            root->children[1] = left;
+        }
+    }
+    return root;
+}
+
+Node* Optimiser::optimise(Node* root) {
     if (!root) return nullptr;
-    
-    // Sequence matters: Selection first to reduce rows, then Projection to reduce columns
+
+    // 1. Move limits down to stop processing early
+    root = pushLimit(root);
+
+    // 2. Prune rows as early as possible
     root = pushSelection(root);
+
+    // 3. Now that rows are pruned, check if we should swap join order
+    root = reorderJoins(root);
+
+    // 4. Finally, prune columns
     root = pushProjection(root);
-    
+
     return root;
 }
