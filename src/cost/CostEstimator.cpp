@@ -20,6 +20,37 @@ double getOutputSize(Node* root) {
     return 0;
 }
 
+// double CostEstimator::estimateCost(Node* root) {
+//     if (!root) return 0;
+
+//     double childrenCost = 0;
+//     for (Node* child : root->children) {
+//         childrenCost += estimateCost(child);
+//     }
+
+//     double currentOperationCost = 0;
+//     if (root->type == "JOIN") {
+//         // Join cost depends on the size of the inputs
+//         currentOperationCost = getOutputSize(root->children[0]) * getOutputSize(root->children[1]);
+//     } else if (root->type == "SELECT") {
+//         currentOperationCost = getOutputSize(root->children[0]); // Cost to scan rows
+//     }
+
+//     return childrenCost + currentOperationCost;
+// }
+
+
+// Add a "width" factor to your cost logic
+double getWidthFactor(Node* root) {
+    if (root->type == "PROJECT") {
+        // Count commas to estimate how many columns are being kept
+        int cols = 1;
+        for (char c : root->value) if (c == ',') cols++;
+        return cols * 0.1; // Fewer columns = smaller width factor
+    }
+    return 1.0; // Default width
+}
+
 double CostEstimator::estimateCost(Node* root) {
     if (!root) return 0;
 
@@ -28,13 +59,16 @@ double CostEstimator::estimateCost(Node* root) {
         childrenCost += estimateCost(child);
     }
 
-    double currentOperationCost = 0;
+    double currentCost = 0;
+    double width = getWidthFactor(root);
+
     if (root->type == "JOIN") {
-        // Join cost depends on the size of the inputs
-        currentOperationCost = getOutputSize(root->children[0]) * getOutputSize(root->children[1]);
-    } else if (root->type == "SELECT") {
-        currentOperationCost = getOutputSize(root->children[0]); // Cost to scan rows
+        // JOIN cost now accounts for row width
+        currentCost = (getOutputSize(root->children[0]) * getOutputSize(root->children[1])) * width;
+    } 
+    else if (root->type == "SELECT") {
+        currentCost = getOutputSize(root->children[0]);
     }
 
-    return childrenCost + currentOperationCost;
+    return childrenCost + currentCost;
 }
