@@ -1,44 +1,34 @@
 #include "Optimiser.h"
-#include <string>
-
-using namespace std;
-
-// Check if condition belongs to a table
-bool belongsToTable(string condition, string table) {
-    return condition.find(table + ".") != string::npos;
-}
 
 Node* Optimizer::pushSelection(Node* root) {
-    if (!root) return nullptr;
+    if (!root || root->children.empty()) return root;
 
-    // Recursively optimize children first
-    for (auto &child : root->children) {
+    // 1. Recursive call to process bottom-up
+    for (auto& child : root->children) {
         child = pushSelection(child);
     }
 
-    // Apply pushdown
-    if (root->type == "SELECT") {
-        Node* child = root->children[0];
+    // 2. If we find a SELECT sitting on top of a JOIN
+    if (root->type == "SELECT" && root->children[0]->type == "JOIN") {
+        Node* joinNode = root->children[0];
+        Node* leftChild = joinNode->children[0];
+        Node* rightChild = joinNode->children[1];
+        string condition = root->value;
 
-        if (child->type == "JOIN") {
-            string condition = root->value;
-
-            Node* left = child->children[0];
-            Node* right = child->children[1];
-
-            // Check where condition belongs
-            if (belongsToTable(condition, left->value)) {
-                Node* newSelect = new Node("SELECT", condition);
-                newSelect->addChild(left);
-                child->children[0] = newSelect;
-                return child;
-            }
-            else if (belongsToTable(condition, right->value)) {
-                Node* newSelect = new Node("SELECT", condition);
-                newSelect->addChild(right);
-                child->children[1] = newSelect;
-                return child;
-            }
+        // Check if condition belongs to Left Table (e.g., "A.age")
+        if (leftChild->type == "TABLE" && condition.find(leftChild->value + ".") != string::npos) {
+            Node* newSelect = new Node("SELECT", condition);
+            newSelect->addChild(leftChild);
+            joinNode->children[0] = newSelect; // Push down to left
+            return joinNode; // Return join as new root (SELECT is now below it)
+        }
+        
+        // Check if condition belongs to Right Table
+        if (rightChild->type == "TABLE" && condition.find(rightChild->value + ".") != string::npos) {
+            Node* newSelect = new Node("SELECT", condition);
+            newSelect->addChild(rightChild);
+            joinNode->children[1] = newSelect; // Push down to right
+            return joinNode;
         }
     }
 

@@ -1,43 +1,37 @@
 #include <iostream>
 #include "planner/Node.h"
-#include "planner/QueryPlan.h"
 #include "optimizer/Optimiser.h"
-
-using namespace std;
-
-void printTree(Node* root, int level = 0) {
-    if (!root) return;
-
-    for (int i = 0; i < level; i++) cout << "  ";
-    cout << root->type;
-
-    if (!root->value.empty())
-        cout << " (" << root->value << ")";
-
-    cout << endl;
-
-    for (auto child : root->children) {
-        printTree(child, level + 1);
-    }
-}
+#include "cost/CostEstimator.h"
 
 int main() {
+    // Manually building: PROJECT -> SELECT (A.age > 20) -> JOIN -> (A, B)
+    Node* tableA = new Node("TABLE", "A");
+    Node* tableB = new Node("TABLE", "B");
+    
+    Node* join = new Node("JOIN");
+    join->addChild(tableA);
+    join->addChild(tableB);
 
-    // Dummy Query (acts like parser output)
-    Query q;
-    q.selectCols = {"name"};
-    q.tables = {"A", "B"};
-    q.conditions = {"A.id = B.id", "A.age > 20"};
+    Node* select = new Node("SELECT", "A.age > 20");
+    select->addChild(join);
 
-    Node* plan = QueryPlan::buildPlan(q);
+    Node* root = new Node("PROJECT", "name");
+    root->addChild(select);
 
-    cout << "Generated Query Plan:\n";
-    printTree(plan);
+    double oldCost = CostEstimator::estimateCost(root);
+    
+    // Perform Optimization
+    Node* optimizedRoot = Optimizer::pushSelection(root);
+    double newCost = CostEstimator::estimateCost(optimizedRoot);
 
-	Node* optimized = Optimizer::pushSelection(plan);
-
-	cout << "\nAfter Optimization:\n";
-	printTree(optimized);
+    std::cout << "--- Query Optimization Report ---" << std::endl;
+    std::cout << "Initial Cost: " << oldCost << std::endl;
+    std::cout << "Optimized Cost: " << newCost << std::endl;
+    
+    if (oldCost > 0) {
+        double improvement = ((oldCost - newCost) / oldCost) * 100;
+        std::cout << "Improvement: " << improvement << "%" << std::endl;
+    }
 
     return 0;
 }
