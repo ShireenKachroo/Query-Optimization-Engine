@@ -8,8 +8,8 @@ using namespace std;
 
 class Node {
 public:
-    string type;  // "SELECT", "PROJECT", "JOIN", "TABLE"
-    string value; // Condition, Column names, or Table name
+    string type;  // ex:  "SELECT", "PROJECT", "JOIN", "TABLE"
+    string value; // like Condition, Column names, or Table name
     vector<Node*> children;
 
     Node(string t, string v = "") : type(t), value(v) {}

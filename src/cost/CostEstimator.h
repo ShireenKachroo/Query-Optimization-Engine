@@ -6,7 +6,6 @@
 
 using namespace std;
 
-// CostEstimator.h
 class CostEstimator {
 public:
     static double estimateCost(Node* root);

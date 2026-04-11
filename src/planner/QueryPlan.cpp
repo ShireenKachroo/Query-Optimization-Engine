@@ -1,11 +1,9 @@
 #include "QueryPlan.h"
 
-// Helper: create JOIN tree from tables
 Node* buildJoinTree(const vector<string>& tables) {
     if (tables.empty()) return nullptr;
 
-    // Start with first table
-    Node* root = new Node("TABLE", tables[0]);
+    Node* root = new Node("TABLE", tables[0]); // first table
 
     for (int i = 1; i < tables.size(); i++) {
         Node* newTable = new Node("TABLE", tables[i]);
@@ -22,10 +20,10 @@ Node* buildJoinTree(const vector<string>& tables) {
 
 Node* QueryPlan::buildPlan(const Query& q) {
 
-    // Step 1: Build JOIN tree from tables
+    // build join tree
     Node* root = buildJoinTree(q.tables);
 
-    // Step 2: Add SELECT node (if conditions exist)
+    // add select cond
     if (!q.conditions.empty()) {
         string combinedCondition = "";
         for (int i = 0; i < q.conditions.size(); i++) {
@@ -39,7 +37,7 @@ Node* QueryPlan::buildPlan(const Query& q) {
         root = selectNode;
     }
 
-    // Step 3: Add PROJECT node
+    // add node
     if (!q.selectCols.empty()) {
         string cols = "";
         for (int i = 0; i < q.selectCols.size(); i++) {

@@ -7,7 +7,6 @@
 
 using namespace std;
 
-// Temporary Query representation
 struct Query {
     vector<string> selectCols;
     vector<string> tables;
