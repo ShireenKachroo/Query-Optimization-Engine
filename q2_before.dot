@@ -1,0 +1,16 @@
+digraph QueryPlan {
+node [shape=box, style=filled, color=lightblue];
+node0 [label="PROJECT\nname"];
+node1 [label="SELECT\nA.id = B.id AND B.id = C.id"];
+node2 [label="JOIN"];
+node3 [label="JOIN"];
+node4 [label="TABLE\nA"];
+node3 -> node4;
+node5 [label="TABLE\nB"];
+node3 -> node5;
+node2 -> node3;
+node6 [label="TABLE\nC"];
+node2 -> node6;
+node1 -> node2;
+node0 -> node1;
+}
