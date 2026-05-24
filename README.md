@@ -10,7 +10,7 @@ Our engine implements a multi-stage optimization pipeline to minimize query exec
       * **Selection Pushdown:** Filters are moved closer to the data source to reduce row cardinality early.
       * **Projection Pushdown:** Unnecessary columns are pruned early to minimize tuple width.
       * **Limit Pushdown:** Constraints are propagated down the tree to stop data scanning as soon as the limit is met.
-  * **Cost-Based Optimization (CBO):**
+  * **Cost-Based Optimization:**
       * **Join Reordering:** Dynamically swaps join operands based on table cardinality (Smallest Table First heuristic).
       * **Cost Estimation:** A recursive cost model that evaluates plan efficiency based on row counts and operation complexity.
   * **Tree Visualization:** Generates human-readable ASCII representations of the Query Plan before and after optimization.
@@ -62,7 +62,7 @@ g++ main.cpp cost/*.cpp optimizer/*.cpp planner/*.cpp -o query_engine
 
 -----
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 ├── src
@@ -95,5 +95,6 @@ g++ main.cpp cost/*.cpp optimizer/*.cpp planner/*.cpp -o query_engine
 -----
 
 
-## Screenshots
-to be added once the project is completed : )
+## Output
+<img width="771" height="529" alt="image" src="https://github.com/user-attachments/assets/9ca340ae-70cf-49e0-be86-c53d304ef42b" />
+
