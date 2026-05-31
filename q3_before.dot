@@ -1,8 +1,0 @@
-digraph QueryPlan {
-node [shape=box, style=filled, color=lightblue];
-node0 [label="PROJECT\nage"];
-node1 [label="SELECT\nB.age > 25"];
-node2 [label="TABLE\nB"];
-node1 -> node2;
-node0 -> node1;
-}
